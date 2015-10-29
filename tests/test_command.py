@@ -238,3 +238,11 @@ class TestCommand(object):
             'container -f -v --verbose --no-color bar -t tag --key=what'
         )
         assert 'verbose' in dict(program)
+
+    def test_alias(self):
+        program = Command('list',alias=['ls'])
+        program.option('-v, --verbose', 'show more log')
+        program.parse(
+            'ls -v'
+        )
+        assert program.verbose

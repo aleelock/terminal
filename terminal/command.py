@@ -153,6 +153,7 @@ class Command(object):
     :param title: title of the program
     :param func: command function to be invoked
     :param arguments: positional arguments
+    :param alias: alias of the program
 
     Create a :class:`Command` instance in your cli file::
 
@@ -205,8 +206,13 @@ class Command(object):
     """
 
     def __init__(self, name, description=None, version=None, usage=None,
-                 title=None, func=None, help_footer=None, arguments=None):
+                 title=None, func=None, help_footer=None, arguments=None,
+                 alias=[]):
         self._name = name
+
+        self._alias = alias
+        self._name_list = '|'.join([name] + alias)
+
         self._description = description
         self._version = version
         self._usage = usage
@@ -506,7 +512,8 @@ class Command(object):
         if not cmd.startswith('-'):
             # parse subcommands
             for command in self._command_list:
-                if isinstance(command, Command) and command._name == cmd:
+
+                if isinstance(command, Command) and (command._name==cmd or cmd in command._alias):
                     command._parent = self
                     return command.parse(self._argv)
 
@@ -574,14 +581,16 @@ class Command(object):
         Print the help menu.
         """
 
-        print('\n  %s %s' % (self._title or self._name, self._version or ''))
+
+        print('\n  %s %s' % (self._title or self._name_list, self._version or ''))
 
         if self._usage:
             print('\n  %s' % self._usage)
         else:
-            cmd = self._name
+            cmd = self._name_list
+
             if hasattr(self, '_parent') and isinstance(self._parent, Command):
-                cmd = '%s %s' % (self._parent._name, cmd)
+                cmd = '%s %s' % (self._parent._name_list, cmd)
 
             if self._command_list:
                 usage = 'Usage: %s <command> [option]' % cmd
@@ -591,7 +600,8 @@ class Command(object):
             pos = ' '.join(['<%s>' % name for name in self._positional_list])
             print('\n  %s %s' % (usage, pos))
 
-        arglen = max(len(o.name) for o in self._option_list)
+
+        arglen = max([len(o.name) for o in self._option_list] + [len(n._name_list) for n in self._command_list])
         arglen += 2
 
         self.print_title('\n  Options:\n')
@@ -603,9 +613,10 @@ class Command(object):
             self.print_title('  Commands:\n')
             for cmd in self._command_list:
                 if isinstance(cmd, Command):
-                    name = _pad(cmd._name, arglen)
+
+                    name = _pad(cmd._name_list, arglen)
                     desc = cmd._description or ''
-                    print('    %s %s' % (_pad(name, arglen), desc))
+                    print('    %s %s' % (_pad(cmd._name_list, arglen), desc))
 
             print('')
 
@@ -618,3 +629,4 @@ class Command(object):
 
 def _pad(msg, length):
     return '%s%s' % (msg, ' ' * (length - len(msg)))
+
