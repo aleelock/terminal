@@ -240,7 +240,7 @@ class TestCommand(object):
         assert 'verbose' in dict(program)
 
     def test_alias(self):
-        program = Command('list',alias=['ls'])
+        program = Command('list', alias=['ls'])
         program.option('-v, --verbose', 'show more log')
         program.parse(
             'ls -v'
